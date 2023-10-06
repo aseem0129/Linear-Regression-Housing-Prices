@@ -1,0 +1,37 @@
+#include <iostream>
+#include <vector>
+
+int main() {
+    try {
+        // Load and preprocess data using DataHandler
+        DataHandler dataHandler("HPI_master.csv");
+        dataHandler.loadDataset();
+        dataHandler.preprocessData();
+
+        // Get feature matrix X and target vector y
+        std::vector<std::vector<double>> X = dataHandler.getX();
+        std::vector<double> y = dataHandler.getY();
+
+        // Create and train the LinearRegression model
+        LinearRegression model;
+        model.train(X, y);
+
+        // Make predictions on new data
+        // Replace X_test with your new data
+        std::vector<std::vector<double>> X_test = {
+            {1.0, 2.0, 3.0}, // Example feature vector 1
+            {4.0, 5.0, 6.0}  // Example feature vector 2
+            // Add more feature vectors as needed
+        };
+        std::vector<double> predictions = model.predict(X_test);
+
+        // Evaluate the model using Mean Squared Error (MSE)
+        double mse = model.calculateMSE(predictions, y);
+        std::cout << "Mean Squared Error: " << mse << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return 1; // Return non-zero to indicate an error
+    }
+
+    return 0; // Return 0 to indicate successful execution
+}
