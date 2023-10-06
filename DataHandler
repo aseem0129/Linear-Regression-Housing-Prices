@@ -1,0 +1,84 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <sstream>
+#include <algorithm>
+#include <numeric>
+
+class DataHandler {
+public:
+    DataHandler(const std::string& datasetPath);
+    void loadDataset();
+    void preprocessData();
+    std::vector<std::vector<double>> getX(); // Returns the feature matrix
+    std::vector<double> getY(); // Returns the target vector
+private:
+    std::vector<std::vector<double>> X; // Feature matrix
+    std::vector<double> y; // Target vector
+    std::string datasetPath;
+};
+
+DataHandler::DataHandler(const std::string& datasetPath) {
+    this->datasetPath = datasetPath;
+}
+
+void DataHandler::loadDataset() {
+    std::ifstream file(datasetPath);
+    
+    if (!file.is_open()) {
+        std::cerr << "Error: Unable to open the dataset file." << std::endl;
+        return;
+    }
+    
+    std::string line;
+    while (std::getline(file, line)) {
+        std::istringstream iss(line);
+        std::vector<double> row;
+        double value;
+
+        while (iss >> value) {
+            row.push_back(value);
+        }
+
+        // Assuming the last value in each row is the target variable
+        y.push_back(row.back());
+        row.pop_back(); // Remove the target variable from the row
+
+        X.push_back(row);
+    }
+
+    file.close();
+}
+
+void DataHandler::preprocessData() {
+    // Calculate the mean of each feature column
+    std::vector<double> columnMeans(X[0].size(), 0.0);
+
+    for (const auto& row : X) {
+        for (size_t i = 0; i < row.size(); ++i) {
+            columnMeans[i] += row[i];
+        }
+    }
+
+    const size_t numRows = X.size();
+    for (double& mean : columnMeans) {
+        mean /= numRows;
+    }
+
+    // Fill missing values with column means
+    for (auto& row : X) {
+        for (size_t i = 0; i < row.size(); ++i) {
+            if (row[i] == -1) {  // Replace -1 with the mean for missing values
+                row[i] = columnMeans[i];
+            }
+        }
+    }
+}
+
+std::vector<std::vector<double>> DataHandler::getX() {
+    return X;
+}
+
+std::vector<double> DataHandler::getY() {
+    return y;
+}
