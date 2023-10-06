@@ -1,0 +1,96 @@
+#include <vector>
+#include <cmath>
+#include <iostream>
+#include <stdexcept>
+
+class LinearRegression {
+public:
+    LinearRegression();
+    void train(const std::vector<std::vector<double>>& X_train, const std::vector<double>& y_train);
+    std::vector<double> predict(const std::vector<std::vector<double>>& X_test);
+    double calculateMSE(const std::vector<double>& predictions, const std::vector<double>& y_true);
+private:
+    std::vector<double> weights; // Model weights (coefficients)
+};
+
+LinearRegression::LinearRegression() {
+    // Initialize weights with zeros
+    weights = std::vector<double>(0);
+}
+
+void LinearRegression::train(const std::vector<std::vector<double>>& X_train, const std::vector<double>& y_train) {
+    // Check if the number of features matches the size of the weight vector
+    if (X_train[0].size() != weights.size()) {
+        throw std::runtime_error("Error: Number of features in training data does not match weight vector size.");
+    }
+
+    // Calculate weights using the closed-form solution for linear regression
+    // w = (X^T * X)^(-1) * X^T * y
+    // where w is the weight vector, X is the feature matrix, and y is the target vector
+
+    // Initialize matrices and vectors
+    std::vector<std::vector<double>> X_transpose(X_train[0].size(), std::vector<double>(X_train.size()));
+    std::vector<std::vector<double>> X_transpose_X(X_train[0].size(), std::vector<double>(X_train[0].size()));
+    std::vector<double> X_transpose_y(X_train[0].size(), 0.0);
+
+    // Transpose X
+    for (size_t i = 0; i < X_train.size(); ++i) {
+        for (size_t j = 0; j < X_train[0].size(); ++j) {
+            X_transpose[j][i] = X_train[i][j];
+        }
+    }
+
+    // Calculate X^T * X and X^T * y
+    for (size_t i = 0; i < X_train[0].size(); ++i) {
+        for (size_t j = 0; j < X_train[0].size(); ++j) {
+            for (size_t k = 0; k < X_train.size(); ++k) {
+                X_transpose_X[i][j] += X_transpose[i][k] * X_train[k][j];
+            }
+        }
+        for (size_t k = 0; k < X_train.size(); ++k) {
+            X_transpose_y[i] += X_transpose[i][k] * y_train[k];
+        }
+    }
+
+    // Calculate weights by solving the linear system (X^T * X) * w = X^T * y
+    for (size_t i = 0; i < weights.size(); ++i) {
+        for (size_t j = 0; j < weights.size(); ++j) {
+            weights[i] += X_transpose_X[i][j] * X_transpose_y[j];
+        }
+    }
+}
+
+std::vector<double> LinearRegression::predict(const std::vector<std::vector<double>>& X_test) {
+    std::vector<double> predictions;
+
+    // Check if the number of features in test data matches the size of the weight vector
+    if (X_test[0].size() != weights.size()) {
+        throw std::runtime_error("Error: Number of features in test data does not match weight vector size.");
+    }
+
+    // Make predictions for each test sample
+    for (size_t i = 0; i < X_test.size(); ++i) {
+        double prediction = 0.0;
+        for (size_t j = 0; j < X_test[0].size(); ++j) {
+            prediction += X_test[i][j] * weights[j];
+        }
+        predictions.push_back(prediction);
+    }
+
+    return predictions;
+}
+
+double LinearRegression::calculateMSE(const std::vector<double>& predictions, const std::vector<double>& y_true) {
+    // Calculate Mean Squared Error (MSE) between predicted and true values
+    if (predictions.size() != y_true.size()) {
+        throw std::runtime_error("Error: Number of predictions does not match number of true values.");
+    }
+
+    double sumSquaredError = 0.0;
+    for (size_t i = 0; i < predictions.size(); ++i) {
+        double error = predictions[i] - y_true[i];
+        sumSquaredError += error * error;
+    }
+
+    return sumSquaredError / static_cast<double>(predictions.size());
+}
